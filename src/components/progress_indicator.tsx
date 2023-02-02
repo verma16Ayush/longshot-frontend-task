@@ -35,7 +35,7 @@ export function FacebookCircularProgress(props: CircularProgressProps & {clr: st
         size={props.size}
         color={props.color}
         thickness={props.thickness}
-        value={props.value}
+        value={props.value || 0}
         {...props}
       />
     </Box>

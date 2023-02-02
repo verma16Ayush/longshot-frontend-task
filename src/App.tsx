@@ -2,31 +2,32 @@ import { Box, Breadcrumbs, Button, ButtonGroup, Card, Chip, CircularProgress, Di
 import { ThemeProvider } from "@mui/system";
 import React, { useEffect, useState } from "react";
 import { AppDrawer } from "./components/appdrawer";
-import { intentMap, keywordDifficultyMap, THEME } from "./const";
+import { indexMap, intentIndexMap, intentMap, keywordDifficultyMap, THEME } from "./const";
 import { US } from 'country-flag-icons/react/3x2'
 import { FacebookCircularProgress } from "./components/progress_indicator";
 import { IGetDataRes } from "./types/getdatares";
 import { fetchData } from "./services/http.services";
+import KeywordTable from "./components/keywordTable";
+import { numFormatter } from "./services/common.utility";
+import KeywordTable2 from "./components/keywordtable2";
+import { Draggable } from "./components/draggable";
 
-const indexMap = {
-  "keyword": 0,
-  "Search Volume": 1,
-  "Intent": 2,
-  "CPC": 3,
-  "Competition": 4,
-  "Number of Results": 5,
-  "Trends": 6,
-  "Keyword Diffuculty": 7
-}
+const rawDataTypeMap = [
+  {
+    id: 0,
+    type: 'raw_broadmatch_data'
+  },
+  {
+    id: 1,
+    type: 'raw_related_data',
+  },
+  {
+    id: 2,
+    type: 'raw_question_data'
+  }
+]
 
-const numFormatter = (num: number) => {
-  if(String(num).length < 4)
-    return String(num);
-  else if(String(num).length < 7)
-    return String(Math.floor(num)/ 1000) + 'K'
-  else
-    return String(Math.floor(num) / 1000000) + 'M'
-}
+ export type rowDataType = {keyword: string; volume: number, kd: number, intent: string, results: number, cpc: number, com: number}
 
 function App() {
   const theme = useTheme();
@@ -34,26 +35,47 @@ function App() {
   const [data, setData] = React.useState<IGetDataRes>();
   const [loading, setLoading] = React.useState<boolean>(true)
   const [selRawData, setSelRawData] = useState<string[][]>([]);
-  const [selRowData, setSelRowData] = useState<string[]>([]);
+  const [selRowData, setSelRowData] = useState<rowDataType>({keyword: 'shopping in barcelona', com: 0, cpc: 0, intent: 'Commercial', kd: 0, results: 0, volume: 0});
   const [kdMetaData, setKdMetaData] = useState<{rating: string; text:string; color: string}>();
   const [selRowDataIntent, setSelRowDataIntent] = useState<{type: string; hoverText: string; color: {bg: string; text: string; hover: string}}>()
-  const [selRawDataId, setSelRawDataId] = useState<number>(0);
+  const [selRawDataType, setSelRawDataType] = useState<{id: number, type: string}>(rawDataTypeMap[0]);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   useEffect(()=>{
     fetchData().then(res => {
       setData(res)
       setLoading(false);
       setSelRawData(res.raw_broadmatch_data)
-      setSelRowData(res.raw_broadmatch_data[0]);
+      // setSelRowData(res.raw_broadmatch_data[0]);
       setKdMetaData(keywordDifficultyMap(res.raw_broadmatch_data[0][indexMap['Keyword Diffuculty']] as unknown as number))
       setSelRowDataIntent(intentMap(res.raw_broadmatch_data[0][indexMap['Intent']] as unknown as number))
     }).catch(e=>console.log(e))
   }, [])
 
+  useEffect(() =>{
+    if(selRawDataType.id === 0){
+      setSelRawData(data?.raw_broadmatch_data || [])
+      // setSelRowData(data?.raw_broadmatch_data[0] || [])
+    }
+    else if(selRawDataType.id === 1){
+      setSelRawData(data?.raw_related_data || [])
+      // setSelRowData(data?.raw_related_data[0] || [])
+    }
+    else{
+      setSelRawData(data?.raw_question_data || []);
+      // setSelRowData(data?.raw_question_data[0] || [])
+    }
+    console.log(selRawDataType)
+  }, [selRawDataType, data])
+
   useEffect(()=>console.log(data), [data])
+
+  // const BroadMatchDataTable = <KeywordTable2 data={data?.raw_broadmatch_data || []} />
+  // const RelatedDataTable = <KeywordTable2 data={data?.raw_related_data || []} />
+  // const QuestionsDataTable = <KeywordTable2 data={data?.raw_question_data || []} />
 
   return (
     <ThemeProvider theme={THEME}>
-      <AppDrawer drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
+      <AppDrawer setModalOpen={setModalOpen} drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
       <Box
         id='body-box'
         sx={{
@@ -90,7 +112,8 @@ function App() {
 
           <Box>
             <Typography color='black' fontWeight='bold' display='inline'>Keyword: </Typography>
-            <Typography color='grey' fontWeight='bold' display='inline'>{selRowData[indexMap['keyword']]} </Typography>
+            {/* <Typography color='grey' fontWeight='bold' display='inline'>{selRowData[indexMap['keyword']]} </Typography> */}
+            <Typography color='grey' fontWeight='bold' display='inline'>{selRowData.keyword} </Typography>
           </Box>
           
           <Box>
@@ -106,6 +129,8 @@ function App() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            overflowY: 'scroll',
+            overflowX: 'scroll'
             // justifyContent: 'center'
           }}
         >
@@ -132,7 +157,7 @@ function App() {
                 Volume
               </Typography>
               <Box>
-                <Typography fontSize={'larger'} color='black' fontWeight='bold' display='inline' mr={1} >{selRowData[indexMap['Search Volume']]}</Typography>
+                <Typography fontSize={'larger'} color='black' fontWeight='bold' display='inline' mr={1} >{selRowData.volume}</Typography>
                 <US width={'18px'} />
               </Box>
               <Divider sx={{mt: 1, mb: 1}} />
@@ -150,14 +175,14 @@ function App() {
                     sx={{display: 'flex', alignItems: 'center'}}
                   >
                     <Box>
-                      <Typography fontSize={'larger'} color='black' fontWeight={'bold'} >{`${selRowData[indexMap['Keyword Diffuculty']] || ''}%`}</Typography>
+                      <Typography fontSize={'larger'} color='black' fontWeight={'bold'} >{`${selRowData.kd}%`}</Typography>
                       <Typography fontSize='small' >{kdMetaData?.rating}</Typography>
                     </Box>
-                    <FacebookCircularProgress thickness={8} size={32} value={selRowData[indexMap['Keyword Diffuculty']] as unknown as number} clr={kdMetaData?.color || ''} />
+                    <FacebookCircularProgress thickness={8} size={32} value={selRowData.kd as unknown as number} clr={keywordDifficultyMap(selRowData.kd).color || ''} />
                   </Box>
                 </Box>
               </Box>
-              <Typography fontSize='small' sx={{mt: 2, mb: 2}}>{kdMetaData?.text}</Typography>
+              <Typography fontSize='small' sx={{mt: 2, mb: 2}}>{keywordDifficultyMap(selRowData.kd).text}</Typography>
             </Card>
 
             <Box
@@ -183,10 +208,10 @@ function App() {
                 <Chip 
                   size='small' 
                   variant="filled" 
-                  label={selRowDataIntent?.type} 
+                  label={selRowData.intent} 
                   sx={{
-                    color: selRowDataIntent?.color.text, 
-                    bgcolor: selRowDataIntent?.color.bg, 
+                    color: intentMap(intentIndexMap[selRowData.intent]).color.text, 
+                    bgcolor: intentMap(intentIndexMap[selRowData.intent]).color.bg, 
                     fontSize: '12px'
                   }} 
                 />
@@ -205,7 +230,7 @@ function App() {
                 }}
               >
                 <Typography fontSize='small' >Results</Typography>
-                <Typography fontSize='larger' fontWeight='bold' >{numFormatter(selRowData[indexMap['Number of Results']] as unknown as number)}</Typography>
+                <Typography fontSize='larger' fontWeight='bold' >{numFormatter(selRowData.results as unknown as number)}</Typography>
               </Card>
               <Card
                 id='card-4'
@@ -226,11 +251,11 @@ function App() {
                 >
                   <Box sx={{flex: 1}} >
                     <Typography fontSize='small' >CPC</Typography>
-                    <Typography fontSize='larger' fontWeight='bold' >${selRowData[indexMap['CPC']]}</Typography>
+                    <Typography fontSize='larger' fontWeight='bold' >${selRowData.cpc}</Typography>
                   </Box>
                   <Box sx={{flex: 1}} >
                     <Typography fontSize='small' >Com.</Typography>
-                    <Typography fontSize='larger' fontWeight='bold' >{selRowData[indexMap['Competition']]}</Typography>
+                    <Typography fontSize='larger' fontWeight='bold' >{selRowData.com}</Typography>
                   </Box>
                 </Box>
               </Card>
@@ -241,20 +266,47 @@ function App() {
             sx={{
               display: 'flex',
               width: '50em',
-              m: 1, p: 1
+              m: 1,p: 1
             }}
           >
-            <ButtonGroup disableElevation disableRipple disableFocusRipple sx={{flex: 1}} size='small' variant="outlined" aria-label="outlined button group">
-              {['Broadmatch', 'Related', 'Questions'].map((val, id)=>{
-                return (
-                  <Button onClick={()=>setSelRawDataId(id)} sx={{backgroundColor: selRawDataId === id ? '#F2EDFD' : '#ffffff'}} >{val}</Button>
-                )
-              })}
+            <ButtonGroup 
+              disableElevation 
+              disableRipple 
+              disableFocusRipple 
+              sx={{flex: 1}} 
+              size='small' 
+              variant="outlined" 
+              aria-label="outlined button group"
+            >
+              <Button 
+                sx={{backgroundColor: selRawDataType.id === 0 ? '#F2EDFD' : '#ffffff'}} 
+              >
+                Broadmatch
+              </Button>
+              <Button 
+                sx={{backgroundColor: selRawDataType.id === 1 ? '#F2EDFD' : '#ffffff'}} 
+              >
+                Related
+              </Button>
+              <Button 
+                // onClick={()=>setSelRawDataType(rawDataTypeMap[2])} 
+                sx={{backgroundColor: selRawDataType.id === 2 ? '#F2EDFD' : '#ffffff'}} 
+              >
+                Questions
+              </Button>
+
             </ButtonGroup>
             <Button variant='contained' size="small">Add to List</Button>
           </Box>       
+          <Box sx={{width: '50em', p: 1}}>
+            <KeywordTable
+              data={selRawData}
+              setSelRowData={setSelRowData}
+            />
+          </Box>
         </Box>
       </Box>
+      <Draggable open={modalOpen} setOpen={setModalOpen} />
     </ThemeProvider>
   );
 }

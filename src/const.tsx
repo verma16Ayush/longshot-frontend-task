@@ -14,7 +14,12 @@ export const HTTP_METHODS = {
   PUT: 'PUT',
   DELETE: 'DELETE'
 }
-
+export const intentIndexMap : {[key: string] : number} = {
+  'Commercial': 0,
+  'Informational': 1,
+  'Navigational': 2,
+  'Transactional': 3,
+}
 export const intentMap = (intentNum: number) => {
   const array = [
     {
@@ -107,3 +112,14 @@ export const THEME = createTheme({
     }
   }
 });
+
+export const indexMap = {
+  "keyword": 0,
+  "Search Volume": 1,
+  "Intent": 2,
+  "CPC": 3,
+  "Competition": 4,
+  "Number of Results": 5,
+  "Trends": 6,
+  "Keyword Diffuculty": 7
+}

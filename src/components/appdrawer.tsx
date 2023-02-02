@@ -20,7 +20,7 @@ import MapIcon from '@mui/icons-material/Map';
 import CellTowerIcon from '@mui/icons-material/CellTower';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-export function AppDrawer(props: {drawerOpen: boolean, setDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
+export function AppDrawer(props: {drawerOpen: boolean, setDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>, setModalOpen: React.Dispatch<React.SetStateAction<boolean>>}) {
   const theme = useTheme();
   const [templatesOpen, setFavOpen] = React.useState<boolean>(true);
   const [integrationsOpen, setIntegrationsOpen] = React.useState<boolean>(true);
@@ -86,11 +86,12 @@ export function AppDrawer(props: {drawerOpen: boolean, setDrawerOpen: React.Disp
           <Divider sx={{ml: 2, mr: 2}} />
 
           <List>
-            <ListItemButton>
+            <ListItemButton onClick={()=>props.setModalOpen(true)}>
               <ListItemIcon>
                 <VerticalSplitIcon fontSize="small" sx={{color: '#5E7C8A'}} />
               </ListItemIcon>
-              <Typography fontSize={'small'} sx={{ color: theme.palette.secondary.main}} >Blog</Typography>
+              {/* <Typography fontSize={'small'} sx={{ color: theme.palette.secondary.main}} >Blog</Typography> */}
+              <Typography fontSize={'small'} sx={{ color: theme.palette.secondary.main}} >Draggable List</Typography>
             </ListItemButton>
             <ListItemButton onClick={()=>setFavOpen(!templatesOpen)} >
               <ListItemIcon>
